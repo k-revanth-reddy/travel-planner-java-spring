@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/base :: layout(~{::title}, ~{::div})}">
+<head>
+    <title>Admin Dashboard - SACET Travel</title>
+</head>
+<body>
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-8">Admin Dashboard</h1>
+
+        <!-- Bookings Section -->
+        <div class="mb-12">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold">All Bookings</h2>
+            </div>
+
+            <!-- Bookings Table -->
+            <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hotel</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-in</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check-out</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guests</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr th:each="booking : ${bookings}">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900" th:text="${booking.user.name}"></div>
+                                <div class="text-sm text-gray-500" th:text="${booking.user.email}"></div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900" th:text="${booking.hotel.name}"></div>
+                                <div class="text-sm text-gray-500" th:text="${booking.hotel.location}"></div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${#temporals.format(booking.checkInDate, 'MMM dd, yyyy')}"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${#temporals.format(booking.checkOutDate, 'MMM dd, yyyy')}"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${booking.numberOfGuests}"></td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span th:class="${'px-2 inline-flex text-xs leading-5 font-semibold rounded-full ' + 
+                                    (booking.bookingStatus == 'CONFIRMED' ? 'bg-green-100 text-green-800' : 
+                                     booking.bookingStatus == 'PENDING' ? 'bg-yellow-100 text-yellow-800' : 
+                                     'bg-red-100 text-red-800')}"
+                                      th:text="${booking.bookingStatus}">
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${'₹' + booking.totalPrice}"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <a th:href="@{/booking/confirmation/{id}(id=${booking.id})}" class="text-blue-600 hover:text-blue-900 mr-3">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <form th:if="${booking.bookingStatus == 'CONFIRMED'}" 
+                                      th:action="@{/booking/{id}/cancel(id=${booking.id})}" 
+                                      method="POST" 
+                                      class="inline">
+                                    <button type="submit" 
+                                            class="text-red-600 hover:text-red-900"
+                                            onclick="return confirm('Are you sure you want to cancel this booking?')">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Hotels Section -->
+        <div class="mb-12">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold">Hotels</h2>
+                <button onclick="document.getElementById('addHotelModal').classList.remove('hidden')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-plus mr-2"></i>Add Hotel
+                </button>
+            </div>
+
+            <!-- Hotels Table -->
+            <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price/Night</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr th:each="hotel : ${hotels}">
+                            <td class="px-6 py-4 whitespace-nowrap" th:text="${hotel.name}">Hotel Name</td>
+                            <td class="px-6 py-4 whitespace-nowrap" th:text="${hotel.location}">Location</td>
+                            <td class="px-6 py-4 whitespace-nowrap" th:text="${'₹' + hotel.pricePerNight}">Price</td>
+                            <td class="px-6 py-4 whitespace-nowrap" th:text="${hotel.rating + '/5'}">Rating</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button th:onclick="'editHotel(' + ${hotel.id} + ')'" class="text-blue-600 hover:text-blue-800 mr-3"><i class="fas fa-edit"></i></button>
+                                <form th:action="@{/admin/hotels/{id}/delete(id=${hotel.id})}" method="POST" class="inline">
+                                    <button type="submit" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Destinations Section -->
+        <div class="mb-12">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold">Destinations</h2>
+                <button onclick="document.getElementById('addDestinationModal').classList.remove('hidden')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-plus mr-2"></i>Add Destination
+                </button>
+            </div>
+
+            <!-- Destinations Table -->
+            <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Country</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Best Time</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Budget</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr th:each="destination : ${destinations}">
+                            <td class="px-6 py-4 whitespace-nowrap" th:text="${destination.name}">Destination Name</td>
+                            <td class="px-6 py-4 whitespace-nowrap" th:text="${destination.country}">Country</td>
+                            <td class="px-6 py-4 whitespace-nowrap" th:text="${destination.bestTimeToVisit}">Best Time</td>
+                            <td class="px-6 py-4 whitespace-nowrap" th:text="${'₹' + destination.estimatedBudget}">Budget</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button th:onclick="'editDestination(' + ${destination.id} + ')'" class="text-blue-600 hover:text-blue-800 mr-3"><i class="fas fa-edit"></i></button>
+                                <form th:action="@{/admin/destinations/{id}/delete(id=${destination.id})}" method="POST" class="inline">
+                                    <button type="submit" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Itineraries Section -->
+        <div>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-semibold">Destination Itineraries</h2>
+                <button onclick="document.getElementById('addItineraryModal').classList.remove('hidden')" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">
+                    <i class="fas fa-plus mr-2"></i>Add Itinerary
+                </button>
+            </div>
+
+            <!-- Itineraries Table -->
+            <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                <table class="min-w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destination</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Morning</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Afternoon</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Evening</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cost</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr th:each="itinerary : ${itineraries}">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900" th:text="${itinerary.destination.name}"></div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${'Day ' + itinerary.dayNumber}"></td>
+                            <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" th:text="${itinerary.morningActivities}"></td>
+                            <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" th:text="${itinerary.afternoonActivities}"></td>
+                            <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" th:text="${itinerary.eveningActivities}"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" th:text="${'₹' + itinerary.estimatedDailyCost}"></td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <button th:onclick="'editItinerary(' + ${itinerary.id} + ')'" class="text-blue-600 hover:text-blue-800 mr-3">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <form th:action="@{/admin/itineraries/{id}/delete(id=${itinerary.id})}" method="POST" class="inline">
+                                    <button type="submit" class="text-red-600 hover:text-red-800">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Add Hotel Modal -->
+        <div id="addHotelModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Add New Hotel</h3>
+                    <form action="/admin/hotels" method="POST" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Name</label>
+                            <input type="text" name="name" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Location</label>
+                            <input type="text" name="location" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Price per Night</label>
+                            <input type="number" name="pricePerNight" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Rating</label>
+                            <input type="number" name="rating" min="1" max="5" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Description</label>
+                            <textarea name="description" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Image URL</label>
+                            <input type="url" name="imageUrl" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Amenities</label>
+                            <input type="text" name="amenities" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., Rooftop Pool, Restaurant, Spa">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Room Types</label>
+                            <input type="text" name="roomTypes" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., Standard Room, Deluxe Suite">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Check-in Time</label>
+                                <input type="time" name="checkInTime" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Check-out Time</label>
+                                <input type="time" name="checkOutTime" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="flex items-center">
+                                <input type="checkbox" name="hasWifi" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                <label class="ml-2 text-sm text-gray-700">Has WiFi</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" name="hasParking" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                <label class="ml-2 text-sm text-gray-700">Has Parking</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" name="hasPool" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                <label class="ml-2 text-sm text-gray-700">Has Pool</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" name="hasRestaurant" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                <label class="ml-2 text-sm text-gray-700">Has Restaurant</label>
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="document.getElementById('addHotelModal').classList.add('hidden')" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md">Cancel</button>
+                            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md">Add Hotel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Destination Modal -->
+        <div id="addDestinationModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Add New Destination</h3>
+                    <form action="/admin/destinations" method="POST" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Name</label>
+                            <input type="text" name="name" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Country</label>
+                            <input type="text" name="country" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Best Time to Visit</label>
+                            <input type="text" name="bestTimeToVisit" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Estimated Budget</label>
+                            <input type="number" name="estimatedBudget" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Description</label>
+                            <textarea name="description" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Image URL</label>
+                            <input type="url" name="imageUrl" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Things to See</label>
+                            <textarea name="thingsToSee" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., Dal Lake, Gulmarg, Pahalgam"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Trip Type</label>
+                            <input type="text" name="tripType" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., family, adventure, romantic">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Attractions</label>
+                            <textarea name="attractions" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., Shikara rides, Gondola rides, skiing"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Weather Information</label>
+                            <textarea name="weatherInfo" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., Alpine climate with cold winters (-2°C to 12°C)"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Travel Routes</label>
+                            <textarea name="travelRoutes" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., Accessible via Airport, connected by road and rail"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Recommended Duration (days)</label>
+                            <input type="number" name="recommendedDuration" min="1" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="document.getElementById('addDestinationModal').classList.add('hidden')" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md">Cancel</button>
+                            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md">Add Destination</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Hotel Modal -->
+        <div id="editHotelModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Edit Hotel</h3>
+                    <form id="editHotelForm" method="POST" class="space-y-4">
+                        <input type="hidden" id="editHotelId" name="id">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Name</label>
+                            <input type="text" id="editHotelName" name="name" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Location</label>
+                            <input type="text" id="editHotelLocation" name="location" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Price per Night</label>
+                            <input type="number" id="editHotelPrice" name="pricePerNight" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Rating</label>
+                            <input type="number" id="editHotelRating" name="rating" min="1" max="5" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Description</label>
+                            <textarea id="editHotelDescription" name="description" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Image URL</label>
+                            <input type="url" id="editHotelImage" name="imageUrl" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Amenities</label>
+                            <input type="text" id="editHotelAmenities" name="amenities" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., Rooftop Pool, Restaurant, Spa">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Room Types</label>
+                            <input type="text" id="editHotelRoomTypes" name="roomTypes" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., Standard Room, Deluxe Suite">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Check-in Time</label>
+                                <input type="time" id="editHotelCheckIn" name="checkInTime" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Check-out Time</label>
+                                <input type="time" id="editHotelCheckOut" name="checkOutTime" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="editHotelWifi" name="hasWifi" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                <label class="ml-2 text-sm text-gray-700">Has WiFi</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="editHotelParking" name="hasParking" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                <label class="ml-2 text-sm text-gray-700">Has Parking</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="editHotelPool" name="hasPool" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                <label class="ml-2 text-sm text-gray-700">Has Pool</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="editHotelRestaurant" name="hasRestaurant" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                <label class="ml-2 text-sm text-gray-700">Has Restaurant</label>
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="document.getElementById('editHotelModal').classList.add('hidden')" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md">Cancel</button>
+                            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Destination Modal -->
+        <div id="editDestinationModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Edit Destination</h3>
+                    <form id="editDestinationForm" method="POST" class="space-y-4">
+                        <input type="hidden" id="editDestinationId" name="id">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Name</label>
+                            <input type="text" id="editDestinationName" name="name" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Country</label>
+                            <input type="text" id="editDestinationCountry" name="country" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Best Time to Visit</label>
+                            <input type="text" id="editDestinationBestTime" name="bestTimeToVisit" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Estimated Budget</label>
+                            <input type="number" id="editDestinationBudget" name="estimatedBudget" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Description</label>
+                            <textarea id="editDestinationDescription" name="description" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Image URL</label>
+                            <input type="url" id="editDestinationImage" name="imageUrl" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Things to See</label>
+                            <textarea id="editDestinationThings" name="thingsToSee" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., Dal Lake, Gulmarg, Pahalgam"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Trip Type</label>
+                            <input type="text" id="editDestinationTripType" name="tripType" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., family, adventure, romantic">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Attractions</label>
+                            <textarea id="editDestinationAttractions" name="attractions" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., Shikara rides, Gondola rides, skiing"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Weather Information</label>
+                            <textarea id="editDestinationWeather" name="weatherInfo" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., Alpine climate with cold winters (-2°C to 12°C)"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Travel Routes</label>
+                            <textarea id="editDestinationRoutes" name="travelRoutes" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2" placeholder="e.g., Accessible via Airport, connected by road and rail"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Recommended Duration (days)</label>
+                            <input type="number" id="editDestinationDuration" name="recommendedDuration" min="1" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="document.getElementById('editDestinationModal').classList.add('hidden')" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md">Cancel</button>
+                            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Itinerary Modal -->
+        <div id="addItineraryModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Add New Itinerary</h3>
+                    <form action="/admin/itineraries" method="POST" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Destination</label>
+                            <select name="destinationId" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                                <option value="">Select a destination</option>
+                                <option th:each="destination : ${destinations}" 
+                                        th:value="${destination.id}" 
+                                        th:text="${destination.name}">
+                                </option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Day Number</label>
+                            <input type="number" name="dayNumber" required min="1" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Morning Activities</label>
+                            <textarea name="morningActivities" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Afternoon Activities</label>
+                            <textarea name="afternoonActivities" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Evening Activities</label>
+                            <textarea name="eveningActivities" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Accommodation</label>
+                            <input type="text" name="suggestedAccommodation" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Transportation</label>
+                            <input type="text" name="transportationDetails" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Meal Suggestions</label>
+                            <textarea name="mealSuggestions" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Estimated Daily Cost</label>
+                            <input type="number" name="estimatedDailyCost" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="document.getElementById('addItineraryModal').classList.add('hidden')" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md">Cancel</button>
+                            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md">Add Itinerary</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Itinerary Modal -->
+        <div id="editItineraryModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Edit Itinerary</h3>
+                    <form id="editItineraryForm" method="POST" class="space-y-4">
+                        <input type="hidden" id="editItineraryId" name="id">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Destination</label>
+                            <select id="editItineraryDestination" name="destinationId" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                                <option value="">Select a destination</option>
+                                <option th:each="destination : ${destinations}" 
+                                        th:value="${destination.id}" 
+                                        th:text="${destination.name}">
+                                </option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Day Number</label>
+                            <input type="number" id="editItineraryDayNumber" name="dayNumber" required min="1" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Morning Activities</label>
+                            <textarea id="editItineraryMorning" name="morningActivities" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Afternoon Activities</label>
+                            <textarea id="editItineraryAfternoon" name="afternoonActivities" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Evening Activities</label>
+                            <textarea id="editItineraryEvening" name="eveningActivities" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Accommodation</label>
+                            <input type="text" id="editItineraryAccommodation" name="suggestedAccommodation" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Transportation</label>
+                            <input type="text" id="editItineraryTransport" name="transportationDetails" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Meal Suggestions</label>
+                            <textarea id="editItineraryMeals" name="mealSuggestions" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Estimated Daily Cost</label>
+                            <input type="number" id="editItineraryCost" name="estimatedDailyCost" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="document.getElementById('editItineraryModal').classList.add('hidden')" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md">Cancel</button>
+                            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function editHotel(id) {
+                fetch(`/admin/hotels/${id}`)
+                    .then(response => response.json())
+                    .then(hotel => {
+                        document.getElementById('editHotelId').value = hotel.id;
+                        document.getElementById('editHotelName').value = hotel.name;
+                        document.getElementById('editHotelLocation').value = hotel.location;
+                        document.getElementById('editHotelPrice').value = hotel.pricePerNight;
+                        document.getElementById('editHotelRating').value = hotel.rating;
+                        document.getElementById('editHotelDescription').value = hotel.description;
+                        document.getElementById('editHotelImage').value = hotel.imageUrl;
+                        document.getElementById('editHotelAmenities').value = hotel.amenities;
+                        document.getElementById('editHotelRoomTypes').value = hotel.roomTypes;
+                        document.getElementById('editHotelCheckIn').value = hotel.checkInTime;
+                        document.getElementById('editHotelCheckOut').value = hotel.checkOutTime;
+                        document.getElementById('editHotelWifi').checked = hotel.hasWifi;
+                        document.getElementById('editHotelParking').checked = hotel.hasParking;
+                        document.getElementById('editHotelPool').checked = hotel.hasPool;
+                        document.getElementById('editHotelRestaurant').checked = hotel.hasRestaurant;
+                        document.getElementById('editHotelForm').action = `/admin/hotels/${id}/edit`;
+                        document.getElementById('editHotelModal').classList.remove('hidden');
+                    });
+            }
+
+            function editDestination(id) {
+                fetch(`/admin/destinations/${id}`)
+                    .then(response => response.json())
+                    .then(destination => {
+                        document.getElementById('editDestinationId').value = destination.id;
+                        document.getElementById('editDestinationName').value = destination.name;
+                        document.getElementById('editDestinationCountry').value = destination.country;
+                        document.getElementById('editDestinationBestTime').value = destination.bestTimeToVisit;
+                        document.getElementById('editDestinationBudget').value = destination.estimatedBudget;
+                        document.getElementById('editDestinationDescription').value = destination.description;
+                        document.getElementById('editDestinationImage').value = destination.imageUrl;
+                        document.getElementById('editDestinationThings').value = destination.thingsToSee;
+                        document.getElementById('editDestinationTripType').value = destination.tripType;
+                        document.getElementById('editDestinationAttractions').value = destination.attractions;
+                        document.getElementById('editDestinationWeather').value = destination.weatherInfo;
+                        document.getElementById('editDestinationRoutes').value = destination.travelRoutes;
+                        document.getElementById('editDestinationDuration').value = destination.recommendedDuration;
+                        document.getElementById('editDestinationForm').action = `/admin/destinations/${id}/edit`;
+                        document.getElementById('editDestinationModal').classList.remove('hidden');
+                    });
+            }
+
+            function editItinerary(id) {
+                fetch(`/admin/itineraries/${id}`)
+                    .then(response => response.json())
+                    .then(itinerary => {
+                        document.getElementById('editItineraryId').value = itinerary.id;
+                        document.getElementById('editItineraryDestination').value = itinerary.destination.id;
+                        document.getElementById('editItineraryDayNumber').value = itinerary.dayNumber;
+                        document.getElementById('editItineraryMorning').value = itinerary.morningActivities;
+                        document.getElementById('editItineraryAfternoon').value = itinerary.afternoonActivities;
+                        document.getElementById('editItineraryEvening').value = itinerary.eveningActivities;
+                        document.getElementById('editItineraryAccommodation').value = itinerary.suggestedAccommodation;
+                        document.getElementById('editItineraryTransport').value = itinerary.transportationDetails;
+                        document.getElementById('editItineraryMeals').value = itinerary.mealSuggestions;
+                        document.getElementById('editItineraryCost').value = itinerary.estimatedDailyCost;
+                        document.getElementById('editItineraryForm').action = `/admin/itineraries/${id}/edit`;
+                        document.getElementById('editItineraryModal').classList.remove('hidden');
+                    });
+            }
+        </script>
+    </div>
+</body>
+</html> 

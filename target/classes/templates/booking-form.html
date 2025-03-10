@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Your Stay</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen py-6">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Error handling for missing hotel -->
+            <div th:if="${hotel == null}" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+                <p class="font-bold">Error</p>
+                <p>Hotel not found. Please return to the <a href="/dashboard" class="underline">dashboard</a>.</p>
+            </div>
+
+            <!-- Hotel Details Card -->
+            <div th:if="${hotel != null}" class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <div class="flex items-start">
+                    <img th:if="${hotel.imageUrl}" th:src="${hotel.imageUrl}" 
+                         class="w-32 h-32 object-cover rounded-lg mr-6" alt="Hotel Image">
+                    <div>
+                        <h1 class="text-2xl font-bold mb-2" th:text="${hotel.name}"></h1>
+                        <p class="text-gray-600 mb-2" th:text="${hotel.location}"></p>
+                        <div class="flex items-center mb-2">
+                            <span class="text-yellow-500 mr-1">★</span>
+                            <span class="text-gray-700" th:text="${hotel.rating}"></span>
+                        </div>
+                        <p class="text-blue-600 font-bold" th:text="${'₹' + hotel.pricePerNight + '/night'}"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Form -->
+            <div th:if="${hotel != null}" class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-bold mb-6">Book Your Stay</h2>
+
+                <!-- Error Message -->
+                <div th:if="${error}" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+                    <span th:text="${error}"></span>
+                </div>
+
+                <!-- Guest Warning Message -->
+                <div id="guestWarning" class="hidden bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4" role="alert">
+                    <p>Note: Maximum 2 guests are allowed per room. Please add more rooms for additional guests.</p>
+                </div>
+
+                <form th:action="@{/booking/create}" method="post" class="space-y-6" id="bookingForm">
+                    <input type="hidden" name="hotelId" th:value="${hotelId}">
+                    <input type="hidden" name="userId" th:value="${user.id}">
+
+                    <!-- Room Type -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Room Type</label>
+                        <select name="roomType" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="">Select Room Type</option>
+                            <option th:each="type : ${roomTypes}" 
+                                    th:value="${type}" 
+                                    th:text="${type}"></option>
+                        </select>
+                    </div>
+
+                    <!-- Number of Rooms -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Number of Rooms</label>
+                        <input type="number" name="numberOfRooms" required min="1" value="1"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <p class="mt-1 text-sm text-gray-500">Each room can accommodate up to 2 guests</p>
+                    </div>
+
+                    <!-- Dates -->
+                    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Check-in Date</label>
+                            <input type="date" name="checkIn" required
+                                   th:min="${minDate}" th:max="${maxDate}"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Check-out Date</label>
+                            <input type="date" name="checkOut" required
+                                   th:min="${minDate}" th:max="${maxDate}"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Number of Guests -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Number of Guests</label>
+                        <input type="number" name="guests" required min="1"
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+
+                    <!-- Breakfast Option -->
+                    <div class="flex items-center">
+                        <input type="checkbox" name="breakfast" id="breakfast"
+                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                        <label for="breakfast" class="ml-2 block text-sm text-gray-700">
+                            Add Breakfast (₹500 per person per day)
+                        </label>
+                    </div>
+
+                    <!-- Special Requests -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Special Requests</label>
+                        <textarea name="specialRequests" rows="3"
+                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                  placeholder="Any special requests or preferences?"></textarea>
+                    </div>
+
+                    <!-- Price Summary -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="font-medium text-gray-900 mb-2">Price Summary</h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between">
+                                <span>Room Rate</span>
+                                <span>₹<span id="roomRate" th:text="${hotel.pricePerNight}"></span> × <span id="numberOfNights">0</span> nights × <span id="roomCount">1</span> rooms</span>
+                            </div>
+                            <div id="breakfastCost" class="flex justify-between hidden">
+                                <span>Breakfast</span>
+                                <span>₹<span id="breakfastTotal">0</span></span>
+                            </div>
+                            <div class="flex justify-between font-bold pt-2 border-t">
+                                <span>Total</span>
+                                <span>₹<span id="totalPrice">0</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex justify-end">
+                        <button type="submit" id="submitButton"
+                                class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                            Proceed to Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        // Get hotel price from Thymeleaf
+        const pricePerNight = [[${hotel != null ? hotel.pricePerNight : 0}]];
+        const form = document.getElementById('bookingForm');
+        const guestInput = document.querySelector('input[name="guests"]');
+        const roomInput = document.querySelector('input[name="numberOfRooms"]');
+        const guestWarning = document.getElementById('guestWarning');
+        const submitButton = document.getElementById('submitButton');
+
+        // Initialize date pickers
+        flatpickr("input[type=date]", {
+            minDate: "today",
+            maxDate: new Date().fp_incr(365),
+            dateFormat: "Y-m-d"
+        });
+
+        // Validate guests per room
+        function validateGuestsPerRoom() {
+            const guests = parseInt(guestInput.value) || 0;
+            const rooms = parseInt(roomInput.value) || 1;
+            const maxGuests = rooms * 2;
+
+            if (guests > maxGuests) {
+                guestWarning.classList.remove('hidden');
+                submitButton.disabled = true;
+                submitButton.classList.add('opacity-50');
+                return false;
+            } else {
+                guestWarning.classList.add('hidden');
+                submitButton.disabled = false;
+                submitButton.classList.remove('opacity-50');
+                return true;
+            }
+        }
+
+        // Calculate price function
+        function calculatePrice() {
+            const checkIn = document.querySelector('input[name="checkIn"]').value;
+            const checkOut = document.querySelector('input[name="checkOut"]').value;
+            const guests = parseInt(guestInput.value) || 0;
+            const rooms = parseInt(roomInput.value) || 1;
+            const breakfast = document.querySelector('input[name="breakfast"]').checked;
+
+            document.getElementById('roomCount').textContent = rooms;
+
+            if (checkIn && checkOut) {
+                const start = new Date(checkIn);
+                const end = new Date(checkOut);
+                const nights = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                
+                if (nights > 0) {
+                    document.getElementById('numberOfNights').textContent = nights;
+                    let total = pricePerNight * nights * rooms;
+
+                    if (breakfast && guests) {
+                        const breakfastTotal = 500 * nights * guests;
+                        document.getElementById('breakfastCost').classList.remove('hidden');
+                        document.getElementById('breakfastTotal').textContent = breakfastTotal;
+                        total += breakfastTotal;
+                    } else {
+                        document.getElementById('breakfastCost').classList.add('hidden');
+                    }
+
+                    document.getElementById('totalPrice').textContent = total;
+                }
+            }
+        }
+
+        // Add event listeners
+        guestInput.addEventListener('input', () => {
+            validateGuestsPerRoom();
+            calculatePrice();
+        });
+
+        roomInput.addEventListener('input', () => {
+            validateGuestsPerRoom();
+            calculatePrice();
+        });
+
+        document.querySelector('input[name="checkIn"]').addEventListener('change', calculatePrice);
+        document.querySelector('input[name="checkOut"]').addEventListener('change', calculatePrice);
+        document.querySelector('input[name="breakfast"]').addEventListener('change', calculatePrice);
+
+        // Form validation
+        form.addEventListener('submit', (e) => {
+            if (!validateGuestsPerRoom()) {
+                e.preventDefault();
+                alert('Please adjust the number of rooms or guests. Maximum 2 guests are allowed per room.');
+            }
+        });
+    </script>
+</body>
+</html> 

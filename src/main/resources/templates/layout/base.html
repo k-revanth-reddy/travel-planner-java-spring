@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="layout(title, content)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:replace="${title}">SACET Travel Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-6 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <a href="/" class="text-xl font-bold">SACET Travel</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- Guest Navigation -->
+                    <div th:if="${user == null}" class="flex items-center space-x-4">
+                        <a href="/login" class="hover:text-gray-200">Login</a>
+                        <a href="/signup" class="hover:text-gray-200">Sign Up</a>
+                    </div>
+                    
+                    <!-- Authenticated User Navigation -->
+                    <div th:if="${user != null}" class="flex items-center space-x-4">
+                        <span th:text="${'Welcome, ' + user.name}" class="text-sm"></span>
+                        <a href="/travel" class="hover:text-gray-200">Dashboard</a>
+                        <a th:if="${user.role == 'ADMIN'}" href="/admin" class="hover:text-gray-200 font-semibold">
+                            <i class="fas fa-cog mr-1"></i>Admin Panel
+                        </a>
+                        <a href="/logout" class="hover:text-gray-200 text-red-200">
+                            <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div th:replace="${content}">
+        <!-- Content will be inserted here -->
+    </div>
+
+    <footer class="bg-gray-800 text-white mt-8">
+        <div class="container mx-auto px-6 py-4">
+            <p class="text-center">&copy; 2024 SACET Travel Planner. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html> 

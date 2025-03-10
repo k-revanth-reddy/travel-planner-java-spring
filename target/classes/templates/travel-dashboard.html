@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Travel Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="/" class="text-xl font-bold text-blue-600">Travel Planner</a>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-gray-700" th:text="${'Welcome, ' + user.name}"></span>
+                    <a th:href="@{/booking/user/{id}(id=${user.id})}" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                        <i class="fas fa-book mr-1"></i>My Bookings
+                    </a>
+                    <a th:if="${user.role == 'ADMIN'}" href="/admin" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
+                        <i class="fas fa-cog mr-1"></i>Admin Panel
+                    </a>
+                    <a href="/logout" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
+                        <i class="fas fa-sign-out-alt mr-1"></i>Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Error Message -->
+        <div th:if="${error}" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6" role="alert">
+            <p class="font-bold">Error</p>
+            <p th:text="${error}"></p>
+        </div>
+
+        <!-- Success Message -->
+        <div th:if="${success}" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6" role="alert">
+            <p class="font-bold">Success</p>
+            <p th:text="${success}"></p>
+        </div>
+
+        <!-- Search Section -->
+        <div class="mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-bold">Search Destinations</h2>
+                    <button onclick="showPreferences()" class="text-blue-600 hover:text-blue-800">
+                        Customize Recommendations
+                    </button>
+                </div>
+                <form class="space-y-4" action="/travel/search" method="GET">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Location</label>
+                            <input type="text" name="location" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Budget Range</label>
+                            <select name="budget" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                                <option value="">Any</option>
+                                <option value="budget">Budget (Under ₹20,000)</option>
+                                <option value="mid">Mid-Range (₹20,000 - ₹50,000)</option>
+                                <option value="luxury">Luxury (Above ₹50,000)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Trip Type</label>
+                            <select name="type" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                                <option value="">Any</option>
+                                <option value="adventure">Adventure</option>
+                                <option value="relaxation">Relaxation</option>
+                                <option value="cultural">Cultural</option>
+                                <option value="family">Family</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md">Search</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Trip Preferences Modal -->
+        <div id="preferencesModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Customize Your Trip Preferences</h3>
+                    <form action="/travel/preferences/update" method="POST" class="space-y-4">
+                        <!-- Trip Types -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Preferred Trip Types</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="tripTypes" value="adventure" class="mr-2">
+                                    Adventure
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="tripTypes" value="relaxation" class="mr-2">
+                                    Relaxation
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="tripTypes" value="cultural" class="mr-2">
+                                    Cultural
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="tripTypes" value="family" class="mr-2">
+                                    Family
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Budget Range -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Preferred Budget Range</label>
+                            <select name="budgetRange" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                <option value="budget">Budget (Under ₹20,000)</option>
+                                <option value="mid">Mid-Range (₹20,000 - ₹50,000)</option>
+                                <option value="luxury">Luxury (Above ₹50,000)</option>
+                            </select>
+                        </div>
+
+                        <!-- Trip Duration -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Preferred Trip Duration</label>
+                            <div class="flex space-x-4">
+                                <div class="flex-1">
+                                    <label class="block text-xs text-gray-500">Minimum Days</label>
+                                    <input type="number" name="minDuration" min="1" max="30" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                </div>
+                                <div class="flex-1">
+                                    <label class="block text-xs text-gray-500">Maximum Days</label>
+                                    <input type="number" name="maxDuration" min="1" max="30" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Interests -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Interests</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="interests" value="beaches" class="mr-2">
+                                    Beaches
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="interests" value="mountains" class="mr-2">
+                                    Mountains
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="interests" value="history" class="mr-2">
+                                    Historical Sites
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="interests" value="food" class="mr-2">
+                                    Food & Cuisine
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="interests" value="wildlife" class="mr-2">
+                                    Wildlife
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end space-x-4 mt-6">
+                            <button type="button" onclick="hidePreferences()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md">
+                                Cancel
+                            </button>
+                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                Save Preferences
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommended Trips Section -->
+        <div class="mb-8">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">Recommended Trips</h2>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-600">Based on your preferences</span>
+                    <button onclick="showPreferences()" class="text-blue-600 hover:text-blue-800 text-sm">
+                        Update Preferences
+                    </button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div th:each="destination : ${recommendations}" class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <img th:if="${destination.imageUrl}" th:src="${destination.imageUrl}" class="w-full h-48 object-cover" alt="Destination Image">
+                    <div class="p-4">
+                        <h3 class="text-xl font-semibold mb-2" th:text="${destination.name}"></h3>
+                        <p class="text-gray-600 mb-2" th:text="${destination.country}"></p>
+                        <p class="text-gray-700 mb-2" th:text="${destination.description}"></p>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-blue-600 font-bold" th:text="${'₹' + destination.estimatedBudget}"></span>
+                            <span class="text-gray-600" th:text="${'Best Time: ' + destination.bestTimeToVisit}"></span>
+                        </div>
+                        <div class="flex space-x-2">
+                            <a th:href="@{/travel/itinerary/{id}(id=${destination.id})}" 
+                               class="flex-1 text-center bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors duration-200">
+                                View Itinerary
+                            </a>
+                            <button onclick="addToComparison(this)" 
+                                    th:data-id="${destination.id}" 
+                                    class="flex-1 bg-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-600 transition-colors duration-200">
+                                Compare
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hotels Section -->
+        <div class="mt-8">
+            <h2 class="text-2xl font-bold mb-6">Featured Hotels</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Hotel Card -->
+                <div th:each="hotel : ${hotels}" class="bg-white rounded-lg shadow-lg overflow-hidden">
+                    <img th:if="${hotel.imageUrl}" th:src="${hotel.imageUrl}" class="w-full h-48 object-cover" alt="Hotel Image">
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold mb-2" th:text="${hotel.name}"></h3>
+                        <p class="text-gray-600 mb-2" th:text="${hotel.location}"></p>
+                        <div class="flex items-center mb-2">
+                            <span class="text-yellow-500 mr-1">
+                                <i class="fas fa-star"></i>
+                            </span>
+                            <span class="text-gray-700" th:text="${hotel.rating}"></span>
+                        </div>
+                        <p class="text-gray-700 mb-4" th:text="${hotel.description}"></p>
+                        <div class="flex justify-between items-center">
+                            <p class="text-blue-600 font-bold" th:text="${'₹' + hotel.pricePerNight + '/night'}"></p>
+                            <a th:href="@{/booking/hotel/{id}(id=${hotel.id})}" 
+                               class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Book Now
+                            </a>
+                        </div>
+                        <div class="mt-4 text-sm text-gray-600">
+                            <p><i class="fas fa-wifi mr-2"></i> Free WiFi</p>
+                            <p><i class="fas fa-parking mr-2"></i> Parking Available</p>
+                            <p th:if="${hotel.hasPool}"><i class="fas fa-swimming-pool mr-2"></i> Swimming Pool</p>
+                            <p th:if="${hotel.hasRestaurant}"><i class="fas fa-utensils mr-2"></i> Restaurant</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Popular Destinations Section -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold mb-4">Popular Destinations</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div th:each="destination : ${destinations}" class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <img th:if="${destination.imageUrl}" th:src="${destination.imageUrl}" class="w-full h-48 object-cover" alt="Destination Image">
+                    <div class="p-4">
+                        <h3 class="text-xl font-semibold mb-2" th:text="${destination.name}"></h3>
+                        <p class="text-gray-600 mb-2" th:text="${destination.country}"></p>
+                        <p class="text-gray-700 mb-2" th:text="${destination.description}"></p>
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-blue-600 font-bold" th:text="${'₹' + destination.estimatedBudget}"></span>
+                            <span class="text-gray-600" th:text="${'Best Time: ' + destination.bestTimeToVisit}"></span>
+                        </div>
+                        <div class="mt-4 space-y-2 mb-4">
+                            <h4 class="font-semibold">Things to See:</h4>
+                            <p class="text-gray-600" th:text="${destination.thingsToSee}"></p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <a th:href="@{/travel/itinerary/{id}(id=${destination.id})}" 
+                               class="flex-1 text-center bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors duration-200">
+                                View Itinerary
+                            </a>
+                            <button onclick="addToComparison(this)" 
+                                    th:data-id="${destination.id}" 
+                                    class="flex-1 bg-purple-500 text-white py-2 px-4 rounded-md hover:bg-purple-600 transition-colors duration-200">
+                                Compare
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Comparison Modal -->
+    <div id="comparisonModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+        <div class="relative top-20 mx-auto p-5 border w-3/4 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Compare Destinations</h3>
+                <div id="comparisonContent" class="grid grid-cols-2 gap-4">
+                    <!-- Comparison content will be dynamically populated -->
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <button onclick="hideComparison()" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let comparisonList = [];
+
+        function addToComparison(button) {
+            const destinationId = button.getAttribute('data-id');
+            const destinationName = button.closest('.bg-white').querySelector('h3').textContent;
+
+            if (comparisonList.length >= 2 && !comparisonList.includes(destinationId)) {
+                alert('You can only compare two destinations at a time. Please clear your current selection first.');
+                return;
+            }
+
+            if (!comparisonList.includes(destinationId)) {
+                comparisonList.push(destinationId);
+                button.classList.remove('bg-purple-500', 'hover:bg-purple-600');
+                button.classList.add('bg-green-500', 'hover:bg-green-600');
+                button.textContent = 'Selected';
+
+                if (comparisonList.length === 2) {
+                    showComparison();
+                } else {
+                    // Show feedback for first selection
+                    alert('Select one more destination to compare with ' + destinationName);
+                }
+            } else {
+                // Remove from comparison
+                comparisonList = comparisonList.filter(id => id !== destinationId);
+                button.classList.remove('bg-green-500', 'hover:bg-green-600');
+                button.classList.add('bg-purple-500', 'hover:bg-purple-600');
+                button.textContent = 'Compare';
+            }
+        }
+
+        function showComparison() {
+            fetch(`/travel/api/compare?destinations=${comparisonList.join(',')}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const content = document.getElementById('comparisonContent');
+                    content.innerHTML = ''; // Clear existing content
+                    
+                    // Create comparison table
+                    const table = document.createElement('table');
+                    table.className = 'w-full border-collapse';
+                    
+                    // Add table header
+                    const thead = document.createElement('thead');
+                    thead.innerHTML = `
+                        <tr class="bg-gray-100">
+                            <th class="p-4 text-left border-b">Features</th>
+                            ${data.map(d => `<th class="p-4 text-left border-b">${d.name}</th>`).join('')}
+                        </tr>
+                    `;
+                    table.appendChild(thead);
+                    
+                    // Add table body
+                    const tbody = document.createElement('tbody');
+                    
+                    // Add rows for each comparison feature
+                    const features = [
+                        { label: 'Country', key: 'country' },
+                        { label: 'Budget', key: 'estimatedBudget', format: val => '₹' + val },
+                        { label: 'Best Time to Visit', key: 'bestTimeToVisit' },
+                        { label: 'Description', key: 'description' },
+                        { label: 'Things to See', key: 'thingsToSee' }
+                    ];
+                    
+                    features.forEach(feature => {
+                        const row = document.createElement('tr');
+                        row.className = 'border-b hover:bg-gray-50';
+                        row.innerHTML = `
+                            <td class="p-4 font-medium">${feature.label}</td>
+                            ${data.map(d => `
+                                <td class="p-4">
+                                    ${feature.format ? feature.format(d[feature.key]) : d[feature.key]}
+                                </td>
+                            `).join('')}
+                        `;
+                        tbody.appendChild(row);
+                    });
+                    
+                    table.appendChild(tbody);
+                    content.appendChild(table);
+                    
+                    // Add action buttons
+                    const actionButtons = document.createElement('div');
+                    actionButtons.className = 'flex justify-end space-x-4 mt-6';
+                    actionButtons.innerHTML = data.map(d => `
+                        <a href="/travel/itinerary/${d.id}" 
+                           class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors duration-200">
+                            View ${d.name} Itinerary
+                        </a>
+                    `).join('');
+                    content.appendChild(actionButtons);
+
+                    // Show the modal
+                    document.getElementById('comparisonModal').classList.remove('hidden');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to load comparison data. Please try again.');
+                })
+                .finally(() => {
+                    // Reset all comparison buttons
+                    document.querySelectorAll('[onclick^="addToComparison"]').forEach(btn => {
+                        btn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                        btn.classList.add('bg-purple-500', 'hover:bg-purple-600');
+                        btn.textContent = 'Compare';
+                    });
+                    comparisonList = []; // Reset comparison list
+                });
+        }
+
+        function hideComparison() {
+            document.getElementById('comparisonModal').classList.add('hidden');
+            // Reset all comparison buttons
+            document.querySelectorAll('[onclick^="addToComparison"]').forEach(btn => {
+                btn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                btn.classList.add('bg-purple-500', 'hover:bg-purple-600');
+                btn.textContent = 'Compare';
+            });
+            comparisonList = []; // Reset comparison list
+        }
+
+        function showPreferences() {
+            document.getElementById('preferencesModal').classList.remove('hidden');
+        }
+
+        function hidePreferences() {
+            document.getElementById('preferencesModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html> 

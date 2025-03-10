@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel List - Travel Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="min-h-screen py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h1 class="text-3xl font-bold mb-8">Available Hotels</h1>
+            
+            <div class="grid grid-cols-1 gap-6">
+                <div th:each="hotel : ${hotels}" class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-start">
+                        <img th:if="${hotel.imageUrl}" th:src="${hotel.imageUrl}" 
+                             class="w-32 h-32 object-cover rounded-lg mr-6" alt="Hotel Image">
+                        <div>
+                            <h2 class="text-xl font-bold mb-2">
+                                <span th:text="${hotel.name}"></span>
+                                <span class="text-gray-500 text-sm ml-2" th:text="${'(ID: ' + hotel.id + ')'}"></span>
+                            </h2>
+                            <p class="text-gray-600 mb-2" th:text="${hotel.location}"></p>
+                            <div class="flex items-center mb-2">
+                                <span class="text-yellow-500 mr-1">★</span>
+                                <span class="text-gray-700" th:text="${hotel.rating}"></span>
+                            </div>
+                            <p class="text-blue-600 font-bold" th:text="${'₹' + hotel.pricePerNight + '/night'}"></p>
+                            <a th:href="@{/booking/hotel/{id}(id=${hotel.id})}" 
+                               class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                                Book Now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

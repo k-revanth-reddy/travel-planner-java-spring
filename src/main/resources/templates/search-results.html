@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - Travel Planner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="/" class="text-xl font-bold text-blue-600">Travel Planner</a>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <a href="/dashboard" class="text-gray-700 hover:text-gray-900">Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Search Section -->
+        <div class="mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold mb-4">Search Destinations</h2>
+                <form class="space-y-4" action="/search" method="GET">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Location</label>
+                            <input type="text" name="location" th:value="${param.location}" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Budget Range</label>
+                            <select name="budget" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                                <option value="" th:selected="${param.budget == null || param.budget.isEmpty()}">Any</option>
+                                <option value="budget" th:selected="${param.budget == 'budget'}">Budget (Under ₹20,000)</option>
+                                <option value="mid" th:selected="${param.budget == 'mid'}">Mid-Range (₹20,000 - ₹50,000)</option>
+                                <option value="luxury" th:selected="${param.budget == 'luxury'}">Luxury (Above ₹50,000)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Trip Type</label>
+                            <select name="type" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                                <option value="" th:selected="${param.type == null || param.type.isEmpty()}">Any</option>
+                                <option value="adventure" th:selected="${param.type == 'adventure'}">Adventure</option>
+                                <option value="relaxation" th:selected="${param.type == 'relaxation'}">Relaxation</option>
+                                <option value="cultural" th:selected="${param.type == 'cultural'}">Cultural</option>
+                                <option value="family" th:selected="${param.type == 'family'}">Family</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-md">Search</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Search Results -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold mb-4">Search Results</h1>
+            <div th:if="${searchResults.empty}" class="bg-white p-6 rounded-lg shadow-md text-center">
+                <p class="text-gray-600">No destinations found matching your criteria. Try adjusting your search filters.</p>
+            </div>
+            <div th:unless="${searchResults.empty}" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div th:each="destination : ${searchResults}" class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <img th:if="${destination.imageUrl}" th:src="${destination.imageUrl}" class="w-full h-48 object-cover" alt="Destination Image">
+                    <div class="p-4">
+                        <h3 class="text-xl font-semibold mb-2" th:text="${destination.name}"></h3>
+                        <p class="text-gray-600 mb-2" th:text="${destination.country}"></p>
+                        <p class="text-gray-700 mb-4" th:text="${destination.description}"></p>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-700">Trip Type</h4>
+                                <p class="text-gray-600" th:text="${destination.tripType}"></p>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-700">Best Time</h4>
+                                <p class="text-gray-600" th:text="${destination.bestTimeToVisit}"></p>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-700">Estimated Budget</h4>
+                                <p class="text-blue-600 font-bold" th:text="${'₹' + destination.estimatedBudget}"></p>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-medium text-gray-700">Duration</h4>
+                                <p class="text-gray-600" th:text="${destination.recommendedDuration + ' days'}"></p>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="text-sm font-medium text-gray-700">Key Attractions</h4>
+                            <p class="text-gray-600" th:text="${destination.attractions}"></p>
+                        </div>
+                        <div class="mt-4 flex space-x-2">
+                            <a th:href="@{/itinerary/{id}(id=${destination.id})}" class="flex-1 text-center bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600">View Itinerary</a>
+                            <button onclick="addToComparison(this)" th:data-id="${destination.id}" class="flex-1 bg-purple-500 text-white py-2 rounded-md hover:bg-purple-600">Compare</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Comparison Modal -->
+    <div id="comparisonModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+        <div class="relative top-20 mx-auto p-5 border w-3/4 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">Compare Destinations</h3>
+                <div id="comparisonContent" class="grid grid-cols-2 gap-4">
+                    <!-- Comparison content will be dynamically populated -->
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <button onclick="document.getElementById('comparisonModal').classList.add('hidden')" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-md">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let comparisonList = [];
+
+        function addToComparison(button) {
+            const destinationId = button.getAttribute('data-id');
+            if (!comparisonList.includes(destinationId)) {
+                comparisonList.push(destinationId);
+                if (comparisonList.length === 2) {
+                    showComparison();
+                }
+            }
+        }
+
+        function showComparison() {
+            fetch(`/compare?destinations=${comparisonList.join(',')}`)
+                .then(response => response.json())
+                .then(data => {
+                    const content = document.getElementById('comparisonContent');
+                    content.innerHTML = ''; // Clear existing content
+                    data.forEach(destination => {
+                        content.innerHTML += `
+                            <div class="p-4 border rounded">
+                                <h4 class="font-bold text-lg">${destination.name}</h4>
+                                <p class="text-gray-600">${destination.country}</p>
+                                <p class="text-blue-600">₹${destination.estimatedBudget}</p>
+                                <p class="mt-2"><strong>Trip Type:</strong> ${destination.tripType}</p>
+                                <p><strong>Best Time:</strong> ${destination.bestTimeToVisit}</p>
+                                <p><strong>Duration:</strong> ${destination.recommendedDuration} days</p>
+                                <p class="mt-2"><strong>Weather:</strong> ${destination.weatherInfo}</p>
+                                <p class="mt-2"><strong>Attractions:</strong> ${destination.attractions}</p>
+                                <p class="mt-2">${destination.description}</p>
+                            </div>
+                        `;
+                    });
+                    document.getElementById('comparisonModal').classList.remove('hidden');
+                    comparisonList = []; // Reset comparison list
+                });
+        }
+    </script>
+</body>
+</html> 
